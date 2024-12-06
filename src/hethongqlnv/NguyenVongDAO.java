@@ -13,15 +13,14 @@ public class NguyenVongDAO {
              ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 NguyenVong nv = new NguyenVong(
-                        rs.getString("ma_xet_tuyen"),
-                        rs.getString("ho_ten"),
-                        rs.getDouble("diem_thi"),
-                        rs.getString("truong"),
-                        rs.getString("nganh"),
-                        rs.getString("he_dao_tao"),
-                        rs.getString("chuong_trinh_dao_tao"),
-                        rs.getString("trang_thai"),
-                        rs.getString("ghi_chu")
+                        rs.getString("id"),
+                        rs.getString("so_bao_danh"),           
+                        rs.getString("ma_truong"),             
+                        rs.getString("nganh"),                 
+                        rs.getString("he_dao_tao"),            
+                        rs.getString("chuong_trinh_dao_tao"), 
+                        rs.getDouble("diem_chuan"),           
+                        rs.getString("trang_thai"),           
                 );
                 danhSach.add(nv);
             }

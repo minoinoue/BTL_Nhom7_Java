@@ -1,38 +1,40 @@
 package hethongqlnv;
 
 public class NguyenVong {
-    String maXetTuyen, hoTen, truong, nganh, heDaoTao, chuongTrinhDaoTao, trangThai, ghiChu;
-    double diemThi;
+    String id,so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, trang_thai, ghi_chu;
+    double diem_chuan;
 
-    public NguyenVong(String maXetTuyen, String hoTen, double diemThi, String truong, String nganh,
-                      String heDaoTao, String chuongTrinhDaoTao, String trangThai, String ghiChu) {
-        this.maXetTuyen = maXetTuyen;
-        this.hoTen = hoTen;
-        this.diemThi = diemThi;
-        this.truong = truong;
+    // Constructor với thông tin thêm về tên thí sinh
+    public NguyenVong(String id, String so_bao_danh, String ma_truong, String nganh,
+                      String he_dao_tao, String chuong_trinh_dao_tao, double diem_chuan, String trang_thai, String ghi_chu) {
+        this.id = id;
+        this.so_bao_danh = so_bao_danh;
+        this.ma_truong = ma_truong;
         this.nganh = nganh;
-        this.heDaoTao = heDaoTao;
-        this.chuongTrinhDaoTao = chuongTrinhDaoTao;
-        this.trangThai = trangThai;
-        this.ghiChu = ghiChu;
+        this.he_dao_tao = he_dao_tao;
+        this.chuong_trinh_dao_tao = chuong_trinh_dao_tao;
+        this.diem_chuan = diem_chuan;
+        this.trang_thai = trang_thai;
+        this.ghi_chu = ghi_chu;
     }
 
+    // Phương thức chuyển đối tượng thành mảng dữ liệu cho bảng
     public Object[] toArray() {
-        return new Object[]{"", maXetTuyen, hoTen, diemThi, truong, nganh, heDaoTao, chuongTrinhDaoTao, trangThai, ghiChu};
+        return new Object[]{"",id,so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu};
     }
 
     @Override
     public String toString() {
         return "NguyenVong{" +
-                "maXetTuyen='" + maXetTuyen + '\'' +
-                ", hoTen='" + hoTen + '\'' +
-                ", diemThi=" + diemThi +
-                ", truong='" + truong + '\'' +
+                "id='" + id + '\'' +
+                "so_bao_danh='" + so_bao_danh + '\'' +
+                ", ma_truong='" + ma_truong + '\'' +
                 ", nganh='" + nganh + '\'' +
-                ", heDaoTao='" + heDaoTao + '\'' +
-                ", chuongTrinhDaoTao='" + chuongTrinhDaoTao + '\'' +
-                ", trangThai='" + trangThai + '\'' +
-                ", ghiChu='" + ghiChu + '\'' +
+                ", he_dao_tao='" + he_dao_tao + '\'' +
+                ", chuong_trinh_dao_tao='" + chuong_trinh_dao_tao + '\'' +
+                ", diem_chuan=" + diem_chuan +
+                ", trang_thai='" + trang_thai + '\'' +
+                ", ghi_chu='" + ghi_chu + '\'' +
                 '}';
     }
 }

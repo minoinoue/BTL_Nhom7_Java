@@ -25,8 +25,8 @@ public class MainFrame extends JFrame {
         danhSachNguyenVong = new ArrayList<>();
         model = new DefaultTableModel();
         model.setColumnIdentifiers(new Object[]{
-                "STT", "Mã Xét Tuyển", "Họ Tên", "Điểm Thi", "Trường", 
-                "Ngành", "Hệ Đào Tạo", "Chương Trình Đào Tạo", "Trạng Thái", "Ghi Chú"
+                "STT", "ID", "Số báo danh", "Mã Trường", 
+                "Ngành", "Hệ Đào Tạo", "Chương Trình Đào Tạo", "Điểm Chuẩn", "Trạng Thái", "Ghi Chú"
         });
 
         table = new JTable(model);
@@ -64,94 +64,95 @@ public class MainFrame extends JFrame {
     }
 
     private void loadDataFromDatabase() {
-        try (Connection connection = DatabaseConnection.getConnection()) {
-            String query = "SELECT * FROM nguyen_vong";
-            PreparedStatement statement = connection.prepareStatement(query);
-            ResultSet resultSet = statement.executeQuery();
+    try (Connection connection = DatabaseConnection.getConnection()) {
+        String query = "SELECT id,nv.so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu " +
+                       "FROM nguyen_vong nv " +
+                       "JOIN thi_sinh ts ON nv.so_bao_danh = ts.so_bao_danh;";
 
-            danhSachNguyenVong.clear();
-            model.setRowCount(0);
+        PreparedStatement statement = connection.prepareStatement(query);
+        ResultSet resultSet = statement.executeQuery();
 
-            while (resultSet.next()) {
-                NguyenVong nv = new NguyenVong(
-                        resultSet.getString("MaXetTuyen"),
-                        resultSet.getString("HoTen"),
-                        resultSet.getDouble("DiemThi"),
-                        resultSet.getString("Truong"),
-                        resultSet.getString("Nganh"),
-                        resultSet.getString("HeDaoTao"),
-                        resultSet.getString("ChuongTrinhDaoTao"),
-                        resultSet.getString("TrangThai"),
-                        resultSet.getString("GhiChu")
-                );
-                danhSachNguyenVong.add(nv);
-                model.addRow(nv.toArray());
-            }
+        danhSachNguyenVong.clear();
+        model.setRowCount(0);
 
-            updateSTT();
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + ex.getMessage());
+        while (resultSet.next()) {
+            NguyenVong nv = new NguyenVong(
+                    resultSet.getString("id"),
+                    resultSet.getString("so_bao_danh"),
+                    resultSet.getString("ma_truong"),
+                    resultSet.getString("nganh"),
+                    resultSet.getString("he_dao_tao"),
+                    resultSet.getString("chuong_trinh_dao_tao"),
+                    resultSet.getDouble("diem_chuan"),
+                    resultSet.getString("trang_thai"),
+                    resultSet.getString("ghi_chu")
+            );
+            danhSachNguyenVong.add(nv);
+            model.addRow(nv.toArray());
         }
+
+        updateSTT();
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + ex.getMessage());
     }
+}
+
 
     private void showAddEditDialog(NguyenVong nv) {
-        JTextField maXetTuyenField = new JTextField(20);
-        JTextField hoTenField = new JTextField(20);
-        JTextField diemThiField = new JTextField(20);
-        JTextField truongField = new JTextField(20);
+        JTextField so_bao_danhField = new JTextField(20);
+        JTextField ma_truongField = new JTextField(20);
         JTextField nganhField = new JTextField(20);
-        JTextField heDaoTaoField = new JTextField(20);
-        JTextField chuongTrinhDaoTaoField = new JTextField(20);
-        JTextField trangThaiField = new JTextField(20);
-        JTextField ghiChuField = new JTextField(20);
+        JTextField he_dao_taoField = new JTextField(20);
+        JTextField chuong_trinh_dao_taoField = new JTextField(20);
+        JTextField diem_chuanField = new JTextField(20);
+        JTextField trang_thaiField = new JTextField(20);
+        JTextField ghi_chuField = new JTextField(20);
 
         if (nv != null) {
-            maXetTuyenField.setText(nv.maXetTuyen);
-            hoTenField.setText(nv.hoTen);
-            diemThiField.setText(String.valueOf(nv.diemThi));
-            truongField.setText(nv.truong);
+            so_bao_danhField.setText(nv.so_bao_danh);
+            ma_truongField.setText(nv.ma_truong);
             nganhField.setText(nv.nganh);
-            heDaoTaoField.setText(nv.heDaoTao);
-            chuongTrinhDaoTaoField.setText(nv.chuongTrinhDaoTao);
-            trangThaiField.setText(nv.trangThai);
-            ghiChuField.setText(nv.ghiChu);
-            maXetTuyenField.setEditable(false);
+            he_dao_taoField.setText(nv.he_dao_tao);
+            chuong_trinh_dao_taoField.setText(nv.chuong_trinh_dao_tao);
+            diem_chuanField.setText(String.valueOf(nv.diem_chuan));
+            trang_thaiField.setText(nv.trang_thai);
+            ghi_chuField.setText(nv.ghi_chu);
+            so_bao_danhField.setEditable(false);
         }
 
         JPanel panel = new JPanel(new GridLayout(10, 2));
-        panel.add(new JLabel("Mã Xét Tuyển:"));
-        panel.add(maXetTuyenField);
-        panel.add(new JLabel("Họ Tên:"));
-        panel.add(hoTenField);
-        panel.add(new JLabel("Điểm Thi:"));
-        panel.add(diemThiField);
-        panel.add(new JLabel("Trường:"));
-        panel.add(truongField);
+        panel.add(new JLabel("Số Báo Danh:"));
+        panel.add(so_bao_danhField);
+        panel.add(new JLabel("Mã Trường:"));
+        panel.add(ma_truongField);
         panel.add(new JLabel("Ngành:"));
         panel.add(nganhField);
         panel.add(new JLabel("Hệ Đào Tạo:"));
-        panel.add(heDaoTaoField);
+        panel.add(he_dao_taoField);
         panel.add(new JLabel("Chương Trình Đào Tạo:"));
-        panel.add(chuongTrinhDaoTaoField);
+        panel.add(chuong_trinh_dao_taoField);
+        panel.add(new JLabel("Điểm Chuẩn:"));
+        panel.add(diem_chuanField);
         panel.add(new JLabel("Trạng Thái:"));
-        panel.add(trangThaiField);
+        panel.add(trang_thaiField);
         panel.add(new JLabel("Ghi Chú:"));
-        panel.add(ghiChuField);
+        panel.add(ghi_chuField);
 
         int option = JOptionPane.showConfirmDialog(this, panel, nv == null ? "Thêm Nguyện Vọng" : "Sửa Nguyện Vọng", JOptionPane.OK_CANCEL_OPTION);
 
         if (option == JOptionPane.OK_OPTION) {
-            String maXetTuyen = maXetTuyenField.getText().trim();
-            String hoTen = hoTenField.getText().trim();
-            double diemThi = Double.parseDouble(diemThiField.getText().trim());
-            String truong = truongField.getText().trim();
+            String so_bao_danh = so_bao_danhField.getText().trim();
+            String ma_truong = ma_truongField.getText().trim();
             String nganh = nganhField.getText().trim();
-            String heDaoTao = heDaoTaoField.getText().trim();
-            String chuongTrinhDaoTao = chuongTrinhDaoTaoField.getText().trim();
-            String trangThai = trangThaiField.getText().trim();
-            String ghiChu = ghiChuField.getText().trim();
+            String he_dao_tao = he_dao_taoField.getText().trim();
+            String chuong_trinh_dao_tao = chuong_trinh_dao_taoField.getText().trim();
+            double diem_chuan = Double.parseDouble(diem_chuanField.getText().trim());
+            String trang_thai = trang_thaiField.getText().trim();
+            String ghi_chu = ghi_chuField.getText().trim();
 
-            NguyenVong newNv = new NguyenVong(maXetTuyen, hoTen, diemThi, truong, nganh, heDaoTao, chuongTrinhDaoTao, trangThai, ghiChu);
+            String id = "NV" + (danhSachNguyenVong.size() + 1);
+            
+            NguyenVong newNv = new NguyenVong(id,so_bao_danh,ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
 
             if (nv == null) {
                 danhSachNguyenVong.add(newNv);
@@ -196,20 +197,20 @@ public class MainFrame extends JFrame {
     }
 
     private void searchNguyenVong() {
-        String searchTerm = JOptionPane.showInputDialog("Nhập mã xét tuyển cần tìm:");
+        String searchTerm = JOptionPane.showInputDialog("Nhập số báo danh cần tìm:");
         if (searchTerm != null) {
             boolean found = false;
             for (NguyenVong nv : danhSachNguyenVong) {
-                if (nv.maXetTuyen.equalsIgnoreCase(searchTerm)) {
+                if (nv.so_bao_danh.equalsIgnoreCase(searchTerm)) {
                     JOptionPane.showMessageDialog(this, "Tìm thấy nguyện vọng:\n" + nv);
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy nguyện vọng với mã xét tuyển: " + searchTerm);
+                JOptionPane.showMessageDialog(this, "Không tìm thấy nguyện vọng với số báo danh: " + searchTerm);
             } else {
-                JOptionPane.showMessageDialog(this, "Tìm thấy thành công mã xét tuyển: " + searchTerm);
+                JOptionPane.showMessageDialog(this, "Tìm thấy thành công số báo danh: " + searchTerm);
             }
         }
     }
@@ -217,34 +218,33 @@ public class MainFrame extends JFrame {
     private void saveDataToDatabase(NguyenVong nv, boolean isNew) {
         try (Connection connection = DatabaseConnection.getConnection()) {
             String query;
-            if (isNew) {
-                query = "INSERT INTO nguyen_vong VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            } else {
-                query = "UPDATE nguyen_vong SET HoTen=?, DiemThi=?, Truong=?, Nganh=?, HeDaoTao=?, ChuongTrinhDaoTao=?, TrangThai=?, GhiChu=? WHERE MaXetTuyen=?";
+            if (isNew) {query = "INSERT INTO nguyen_vong (id,so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?)";
+            }else {
+                query = "UPDATE nguyen_vong SET ma_truong=?,nganh=?, he_dao_tao=?, chuong_trinh_dao_tao=?, diem_chuan=?, trang_thai=?, ghi_chu=? WHERE id = ? AND so_bao_danh=?";
             }
 
             PreparedStatement statement = connection.prepareStatement(query);
             if (isNew) {
-                statement.setString(1, nv.maXetTuyen);
-                statement.setString(2, nv.hoTen);
-                statement.setDouble(3, nv.diemThi);
-                statement.setString(4, nv.truong);
-                statement.setString(5, nv.nganh);
-                statement.setString(6, nv.heDaoTao);
-                statement.setString(7, nv.chuongTrinhDaoTao);
-                statement.setString(8, nv.trangThai);
-                statement.setString(9, nv.ghiChu);
+            statement.setString(1, nv.id);
+            statement.setString(2, nv.so_bao_danh);
+            statement.setString(3, nv.ma_truong);
+            statement.setString(4, nv.nganh);
+            statement.setString(5, nv.he_dao_tao);
+            statement.setString(6, nv.chuong_trinh_dao_tao);
+            statement.setDouble(7, nv.diem_chuan);
+            statement.setString(8, nv.trang_thai);
+            statement.setString(9, nv.ghi_chu);
             } else {
-                statement.setString(9, nv.maXetTuyen);
-                statement.setString(1, nv.hoTen);
-                statement.setDouble(2, nv.diemThi);
-                statement.setString(3, nv.truong);
-                statement.setString(4, nv.nganh);
-                statement.setString(5, nv.heDaoTao);
-                statement.setString(6, nv.chuongTrinhDaoTao);
-                statement.setString(7, nv.trangThai);
-                statement.setString(8, nv.ghiChu);
-            }
+            statement.setString(1, nv.ma_truong);
+            statement.setString(2, nv.nganh);
+            statement.setString(3, nv.he_dao_tao);
+            statement.setString(4, nv.chuong_trinh_dao_tao);
+            statement.setDouble(5, nv.diem_chuan);
+            statement.setString(6, nv.trang_thai);
+            statement.setString(7, nv.ghi_chu);
+            statement.setString(8, nv.id);
+            statement.setString(9, nv.so_bao_danh);
+        }
 
             statement.executeUpdate();
         } catch (SQLException ex) {
@@ -253,17 +253,17 @@ public class MainFrame extends JFrame {
     }
 
     private void deleteDataFromDatabase(NguyenVong nv) {
-        try (Connection connection = DatabaseConnection.getConnection()) {
-            String query = "DELETE FROM nguyen_vong WHERE MaXetTuyen = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, nv.maXetTuyen);
-            statement.executeUpdate();
-            
-            JOptionPane.showMessageDialog(this, "Xóa thành công!");
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi xóa dữ liệu: " + ex.getMessage());
-        }
+    try (Connection connection = DatabaseConnection.getConnection()) {
+        String query = "DELETE FROM nguyen_vong WHERE so_bao_danh = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, nv.so_bao_danh);
+        statement.executeUpdate();
+        JOptionPane.showMessageDialog(this, "Xóa thành công!");
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi xóa dữ liệu: " + ex.getMessage());
     }
+}
+
 
     private void updateSTT() {
         for (int i = 0; i < model.getRowCount(); i++) {
@@ -290,7 +290,8 @@ public class MainFrame extends JFrame {
 
                 for (int i = 0; i < model.getRowCount(); i++) {
                     for (int j = 0; j < model.getColumnCount(); j++) {
-                        writer.write(model.getValueAt(i, j) + ",");
+                        Object value = model.getValueAt(i, j);
+                        writer.write((value != null ? value.toString() : "") + ",");
                     }
                     writer.write("\n");
                 }
