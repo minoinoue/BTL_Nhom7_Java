@@ -20,7 +20,8 @@ public class NguyenVongDAO {
                         rs.getString("he_dao_tao"),            
                         rs.getString("chuong_trinh_dao_tao"), 
                         rs.getDouble("diem_chuan"),           
-                        rs.getString("trang_thai"),           
+                        rs.getString("trang_thai"), 
+                        rs.getString("ghi_chu")
                 );
                 danhSach.add(nv);
             }

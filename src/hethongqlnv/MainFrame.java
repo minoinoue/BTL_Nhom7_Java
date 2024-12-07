@@ -33,33 +33,47 @@ public class MainFrame extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
 
         JPanel panel = new JPanel(new FlowLayout());
-
+        JPanel settingPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPopupMenu settingMenu = new JPopupMenu();
+        JMenuItem logoutItem = new JMenuItem("Đăng xuất");
+        
         JButton addButton = new JButton("Thêm nguyện vọng");
         JButton editButton = new JButton("Sửa nguyện vọng");
         JButton deleteButton = new JButton("Xóa nguyện vọng");
         JButton searchButton = new JButton("Tìm kiếm nguyện vọng");
         JButton exportButton = new JButton("Xuất CSV");
-
+        JButton settingButton = new JButton("Setting");
+        
         panel.add(addButton);
         panel.add(editButton);
         panel.add(deleteButton);
         panel.add(searchButton);
         panel.add(exportButton);
-
+        settingPanel.add(settingButton);
+        settingMenu.add(logoutItem);
         JLabel titleLabel = new JLabel("Danh sách thông tin đăng ký nguyện vọng của thí sinh");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
 
         add(titleLabel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(panel, BorderLayout.SOUTH);
-
+        add(settingPanel, BorderLayout.NORTH);
+        addPopupMenu();
         // Action listeners
         addButton.addActionListener(e -> showAddEditDialog(null));
         editButton.addActionListener(e -> editNguyenVong());
         deleteButton.addActionListener(e -> deleteNguyenVong());
         searchButton.addActionListener(e -> searchNguyenVong());
         exportButton.addActionListener(e -> exportToCSV());
-
+        settingButton.addActionListener(e -> settingMenu.show(settingButton, 0, settingButton.getHeight()));
+        logoutItem.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn đăng xuất?", "Xác nhận đăng xuất", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose(); // Đóng cửa sổ hiện tại
+                new LoginFrame().setVisible(true); // Hiển thị lại màn hình đăng nhập
+            }
+        });
+        
         loadDataFromDatabase();
     }
 
@@ -302,7 +316,42 @@ public class MainFrame extends JFrame {
             }
         }
     }
+    private void addPopupMenu() {
+    JPopupMenu popupMenu = new JPopupMenu();
+    JMenuItem viewInfoItem = new JMenuItem("Xem Thông Tin");
 
+    viewInfoItem.addActionListener(e -> {
+        int row = table.getSelectedRow();
+        if (row >= 0) {
+            String soBaoDanh = (String) model.getValueAt(row, 2); // Cột "Số báo danh"
+            new ThongTinThiSinh(this, soBaoDanh).setVisible(true);
+        }
+    });
+
+    popupMenu.add(viewInfoItem);
+
+    table.addMouseListener(new java.awt.event.MouseAdapter() {
+        @Override
+        public void mousePressed(java.awt.event.MouseEvent e) {
+            if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
+                int row = table.rowAtPoint(e.getPoint());
+                table.setRowSelectionInterval(row, row); // Chọn hàng khi nhấp chuột phải
+                popupMenu.show(table, e.getX(), e.getY());
+            }
+        }
+
+        @Override
+        public void mouseReleased(java.awt.event.MouseEvent e) {
+            if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
+                int row = table.rowAtPoint(e.getPoint());
+                table.setRowSelectionInterval(row, row);
+                popupMenu.show(table, e.getX(), e.getY());
+            }
+        }
+    });
+    
+    
+}
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame();
