@@ -10,11 +10,13 @@ public class DatabaseConnection {
 
     public static Connection getConnection() {
         try {
+            // Kiểm tra driver của SQL Server
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             return DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return null; // Trả về null nếu không kết nối được
         }
     }
 }
+
