@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class MainFrame extends JFrame {
     private JTable table;
@@ -46,14 +47,12 @@ public class MainFrame extends JFrame {
         JButton searchButton = new JButton("Tìm kiếm nguyện vọng");
         JButton exportButton = new JButton("Xuất CSV");
         JButton settingButton = new JButton("Setting");
-        JButton statisticsButton = new JButton("Thống kê");
         
         panel.add(addButton);
         panel.add(editButton);
         panel.add(deleteButton);
         panel.add(searchButton);
         panel.add(exportButton);
-        panel.add(statisticsButton); // Thêm nút vào panel
         settingPanel.add(settingButton);
         settingMenu.add(showAdminItem);
         settingMenu.add(logoutItem);
@@ -75,7 +74,6 @@ public class MainFrame extends JFrame {
         deleteButton.addActionListener(e -> deleteNguyenVong());
         searchButton.addActionListener(e -> searchNguyenVong());
         exportButton.addActionListener(e -> exportToCSV());
-        statisticsButton.addActionListener(e -> showStatistics());
         settingButton.addActionListener(e -> {
     // Hiển thị menu setting
         settingMenu.show(settingButton, 0, settingButton.getHeight());
@@ -164,6 +162,7 @@ public class MainFrame extends JFrame {
 }
 
     private void showAddEditDialog(NguyenVong nv) {
+        JTextField idField = new JTextField(20);
         JTextField so_bao_danhField = new JTextField(20);
         JTextField ma_truongField = new JTextField(20);
         JTextField nganhField = new JTextField(20);
@@ -174,6 +173,7 @@ public class MainFrame extends JFrame {
         JTextField ghi_chuField = new JTextField(20);
 
         if (nv != null) {
+            idField.setText(nv.id);
             so_bao_danhField.setText(nv.so_bao_danh);
             ma_truongField.setText(nv.ma_truong);
             nganhField.setText(nv.nganh);
@@ -182,6 +182,7 @@ public class MainFrame extends JFrame {
             diem_chuanField.setText(String.valueOf(nv.diem_chuan));
             trang_thaiField.setText(nv.trang_thai);
             ghi_chuField.setText(nv.ghi_chu);
+            idField.setEditable(false);
             so_bao_danhField.setEditable(false);
             trang_thaiField.setEditable(false);
         }
@@ -199,8 +200,6 @@ public class MainFrame extends JFrame {
         panel.add(chuong_trinh_dao_taoField);
         panel.add(new JLabel("Điểm Chuẩn:"));
         panel.add(diem_chuanField);
-        panel.add(new JLabel("Trạng Thái:"));
-        panel.add(trang_thaiField);
         panel.add(new JLabel("Ghi Chú:"));
         panel.add(ghi_chuField);
 
@@ -216,28 +215,41 @@ public class MainFrame extends JFrame {
             String trang_thai = trang_thaiField.getText().trim();
             String ghi_chu = ghi_chuField.getText().trim();
 
-            String id = "NV" + (danhSachNguyenVong.size() + 1);
-            
-            NguyenVong newNv = new NguyenVong(id,so_bao_danh,ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
-
             if (nv == null) {
+                String id;
+                Random random = new Random();
+                do {
+                    id = String.valueOf(random.nextInt(100));
+                } while (idDaTonTai(id));
+
+                NguyenVong newNv = new NguyenVong(id, so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
                 danhSachNguyenVong.add(newNv);
                 model.addRow(newNv.toArray());
                 saveDataToDatabase(newNv, true);
                 JOptionPane.showMessageDialog(this, "Thêm nguyện vọng thành công!");
-            } else {
+            }else {
+                String id = idField.getText().trim();
+                NguyenVong newNv = new NguyenVong(id,so_bao_danh,ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
                 int row = table.getSelectedRow();
                 danhSachNguyenVong.set(row, newNv);
                 for (int i = 0; i < model.getColumnCount(); i++) {
                     model.setValueAt(newNv.toArray()[i], row, i);
                 }
-                JOptionPane.showMessageDialog(this, "Sửa nguyện vọng thành công!");
                 saveDataToDatabase(newNv, false);
+                JOptionPane.showMessageDialog(this, "Sửa nguyện vọng thành công!"); 
             }
             updateSTT();
         }
     }
-
+    private boolean idDaTonTai(String id) {
+    for (NguyenVong nv : danhSachNguyenVong) {
+        if (nv.id.equals(id)) {
+            return true;
+        }
+    }
+    return false;
+}
+    
     private void editNguyenVong() {
         int row = table.getSelectedRow();
         if (row >= 0) {
@@ -263,23 +275,64 @@ public class MainFrame extends JFrame {
     }
 
     private void searchNguyenVong() {
-        String searchTerm = JOptionPane.showInputDialog("Nhập số báo danh cần tìm:");
-        if (searchTerm != null) {
-            boolean found = false;
-            for (NguyenVong nv : danhSachNguyenVong) {
-                if (nv.so_bao_danh.equalsIgnoreCase(searchTerm)) {
-                    JOptionPane.showMessageDialog(this, "Tìm thấy nguyện vọng:\n" + nv);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy nguyện vọng với số báo danh: " + searchTerm);
-            } else {
-                JOptionPane.showMessageDialog(this, "Tìm thấy thành công số báo danh: " + searchTerm);
+    String searchTerm = JOptionPane.showInputDialog("Nhập số báo danh cần tìm:");
+    if (searchTerm != null) {
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Nguyện vọng ID");
+        model.addColumn("Số Báo Danh");
+        model.addColumn("Mã Trường");
+        model.addColumn("Ngành");
+        model.addColumn("Hệ Đào Tạo");
+        model.addColumn("Chương Trình Đào Tạo");
+        model.addColumn("Điểm Chuẩn");
+        model.addColumn("Trạng Thái");
+        model.addColumn("Ghi Chú");
+
+        boolean found = false;
+
+        for (NguyenVong nv : danhSachNguyenVong) {
+            if (nv.so_bao_danh.equalsIgnoreCase(searchTerm)) {
+                model.addRow(new Object[] {
+                    nv.id,
+                    nv.so_bao_danh,
+                    nv.ma_truong,
+                    nv.nganh,
+                    nv.he_dao_tao,
+                    nv.chuong_trinh_dao_tao,
+                    nv.diem_chuan,
+                    nv.trang_thai,
+                    nv.ghi_chu
+                });
+                found = true;
             }
         }
+
+        if (found) {
+            JTable table = new JTable(model);
+            // Điều chỉnh chiều cao của các hàng
+            table.setRowHeight(30); // Chiều cao mỗi hàng (mặc định là 16)
+            
+            // Điều chỉnh chiều rộng của các cột
+            table.getColumnModel().getColumn(0).setPreferredWidth(100); // ID Nguyện vọng
+            table.getColumnModel().getColumn(1).setPreferredWidth(150); // Số Báo Danh
+            table.getColumnModel().getColumn(2).setPreferredWidth(150); // Mã Trường
+            table.getColumnModel().getColumn(3).setPreferredWidth(100); // Ngành
+            table.getColumnModel().getColumn(4).setPreferredWidth(100); // Hệ Đào Tạo
+            table.getColumnModel().getColumn(5).setPreferredWidth(200); // Chương Trình Đào Tạo
+            table.getColumnModel().getColumn(6).setPreferredWidth(100); // Điểm Chuẩn
+            table.getColumnModel().getColumn(7).setPreferredWidth(100); // Trạng Thái
+            table.getColumnModel().getColumn(8).setPreferredWidth(200); // Ghi Chú
+
+            // Điều chỉnh kích thước bảng
+            table.setPreferredScrollableViewportSize(new Dimension(800, 300)); // Kích thước bảng
+
+            JScrollPane scrollPane = new JScrollPane(table);
+            JOptionPane.showMessageDialog(this, scrollPane, "Kết quả tìm kiếm", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy nguyện vọng với số báo danh: " + searchTerm);
+        }
     }
+}
 
     private void saveDataToDatabase(NguyenVong nv, boolean isNew) {
         try (Connection connection = DatabaseConnection.getConnection()) {
@@ -288,7 +341,7 @@ public class MainFrame extends JFrame {
             }else {
                 query = "UPDATE nguyen_vong " +
                     "SET ma_truong=?, nganh=?, he_dao_tao=?, chuong_trinh_dao_tao=?, diem_chuan=?, trang_thai = ?, ghi_chu=? " +
-                    "WHERE id=?";
+                    "WHERE id=? AND so_bao_danh=?";
             }
 
             PreparedStatement statement = connection.prepareStatement(query);
@@ -311,19 +364,22 @@ public class MainFrame extends JFrame {
             statement.setString(6, nv.trang_thai);
             statement.setString(7, nv.ghi_chu);
             statement.setString(8, nv.id);
+            statement.setString(9, nv.so_bao_danh);
         }
-
             statement.executeUpdate();
+            loadDataFromDatabase();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu: " + ex.getMessage());
         }
+        
     }
 
     private void deleteDataFromDatabase(NguyenVong nv) {
     try (Connection connection = DatabaseConnection.getConnection()) {
-        String query = "DELETE FROM nguyen_vong WHERE so_bao_danh = ?";
+        String query = "DELETE FROM nguyen_vong WHERE id = ? AND so_bao_danh = ?";
         PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, nv.so_bao_danh);
+        statement.setString(1, nv.id);
+        statement.setString(2, nv.so_bao_danh);
         statement.executeUpdate();
         JOptionPane.showMessageDialog(this, "Xóa thành công!");
     } catch (SQLException ex) {
@@ -340,7 +396,7 @@ public class MainFrame extends JFrame {
 
     private void exportToCSV() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Luu tai");
+        fileChooser.setDialogTitle("Lưu tại");
         int userSelection = fileChooser.showSaveDialog(this);
 
         if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -442,46 +498,6 @@ public class MainFrame extends JFrame {
     } else {
         JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin admin.");
     }
-}
-    private void showStatistics() {
-    // Tạo danh sách các thí sinh đã đỗ và trượt
-    DefaultListModel<String> passedModel = new DefaultListModel<>();
-    DefaultListModel<String> failedModel = new DefaultListModel<>();
-    
-    
-    // Phân loại thí sinh đã đỗ và trượt
-    for (NguyenVong nv : danhSachNguyenVong) {
-        if (nv.trang_thai.equals("Đỗ")) {
-            passedModel.addElement(nv.so_bao_danh);
-        } else {
-            failedModel.addElement(nv.so_bao_danh);
-        }
-    }
-
-    // Tạo các danh sách hiển thị cho thí sinh đỗ và trượt
-    JList<String> passedList = new JList<>(passedModel);
-    JList<String> failedList = new JList<>(failedModel);
-
-    // Tạo các hộp cuộn để chứa danh sách
-    JScrollPane passedScrollPane = new JScrollPane(passedList);
-    JScrollPane failedScrollPane = new JScrollPane(failedList);
-
-    // Tạo bảng chọn giữa "Thí sinh đỗ" và "Thí sinh trượt"
-    String[] options = {"Thí sinh đỗ", "Thí sinh trượt"};
-    JComboBox<String> selectionComboBox = new JComboBox<>(options);
-    selectionComboBox.addActionListener(e -> {
-        String selectedOption = (String) selectionComboBox.getSelectedItem();
-        if ("Thí sinh đỗ".equals(selectedOption)) {
-            JOptionPane.showMessageDialog(this, passedScrollPane, "Thí sinh đỗ", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, failedScrollPane, "Thí sinh trượt", JOptionPane.INFORMATION_MESSAGE);
-        }
-    });
-
-    // Hiển thị hộp thoại với lựa chọn
-    JPanel panel = new JPanel();
-    panel.add(selectionComboBox);
-    JOptionPane.showMessageDialog(this, panel, "Chọn danh sách thí sinh", JOptionPane.PLAIN_MESSAGE);
 }
 
     public static void main(String[] args) {
