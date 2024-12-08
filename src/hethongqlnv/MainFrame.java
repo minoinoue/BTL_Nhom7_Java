@@ -15,8 +15,10 @@ public class MainFrame extends JFrame {
     private JTable table;
     private DefaultTableModel model;
     private ArrayList<NguyenVong> danhSachNguyenVong;
+    private String currentUsername;
 
-    public MainFrame() {
+    public MainFrame(String username) {
+        this.currentUsername = username;
         setTitle("Quản lý đăng ký nguyện vọng xét tuyển");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -36,6 +38,7 @@ public class MainFrame extends JFrame {
         JPanel settingPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JPopupMenu settingMenu = new JPopupMenu();
         JMenuItem logoutItem = new JMenuItem("Đăng xuất");
+        JMenuItem showAdminItem = new JMenuItem("Xem thông tin Admin");
         
         JButton addButton = new JButton("Thêm nguyện vọng");
         JButton editButton = new JButton("Sửa nguyện vọng");
@@ -43,21 +46,28 @@ public class MainFrame extends JFrame {
         JButton searchButton = new JButton("Tìm kiếm nguyện vọng");
         JButton exportButton = new JButton("Xuất CSV");
         JButton settingButton = new JButton("Setting");
+        JButton statisticsButton = new JButton("Thống kê");
         
         panel.add(addButton);
         panel.add(editButton);
         panel.add(deleteButton);
         panel.add(searchButton);
         panel.add(exportButton);
+        panel.add(statisticsButton); // Thêm nút vào panel
         settingPanel.add(settingButton);
+        settingMenu.add(showAdminItem);
         settingMenu.add(logoutItem);
-        JLabel titleLabel = new JLabel("Danh sách thông tin đăng ký nguyện vọng của thí sinh");
+        JLabel titleLabel = new JLabel("Danh sách thông tin đăng ký nguyện vọng của thí sinh: ");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
 
-        add(titleLabel, BorderLayout.NORTH);
+        
         add(scrollPane, BorderLayout.CENTER);
         add(panel, BorderLayout.SOUTH);
-        add(settingPanel, BorderLayout.NORTH);
+        JPanel northPanel = new JPanel(new BorderLayout());
+        northPanel.add(titleLabel, BorderLayout.CENTER);
+        northPanel.add(settingPanel, BorderLayout.EAST);
+
+        add(northPanel, BorderLayout.NORTH);
         addPopupMenu();
         // Action listeners
         addButton.addActionListener(e -> showAddEditDialog(null));
@@ -65,7 +75,14 @@ public class MainFrame extends JFrame {
         deleteButton.addActionListener(e -> deleteNguyenVong());
         searchButton.addActionListener(e -> searchNguyenVong());
         exportButton.addActionListener(e -> exportToCSV());
-        settingButton.addActionListener(e -> settingMenu.show(settingButton, 0, settingButton.getHeight()));
+        statisticsButton.addActionListener(e -> showStatistics());
+        settingButton.addActionListener(e -> {
+    // Hiển thị menu setting
+        settingMenu.show(settingButton, 0, settingButton.getHeight());
+        });
+        showAdminItem.addActionListener(e -> {
+                    showAdminInfo();
+        });
         logoutItem.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn đăng xuất?", "Xác nhận đăng xuất", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
@@ -77,11 +94,20 @@ public class MainFrame extends JFrame {
         loadDataFromDatabase();
     }
 
+    private MainFrame() {
+        throw new UnsupportedOperationException("Not supported yet."); 
+    }
+
     private void loadDataFromDatabase() {
     try (Connection connection = DatabaseConnection.getConnection()) {
-        String query = "SELECT id,nv.so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu " +
-                       "FROM nguyen_vong nv " +
-                       "JOIN thi_sinh ts ON nv.so_bao_danh = ts.so_bao_danh;";
+        // Truy vấn kết hợp hai bảng
+        String query = """
+                SELECT nv.id, nv.so_bao_danh, nv.ma_truong, nv.nganh, 
+                       nv.he_dao_tao, nv.chuong_trinh_dao_tao, nv.diem_chuan, 
+                       ts.diem_thi, nv.trang_thai, nv.ghi_chu 
+                FROM nguyen_vong nv
+                JOIN thi_sinh ts ON nv.so_bao_danh = ts.so_bao_danh;
+                """;
 
         PreparedStatement statement = connection.prepareStatement(query);
         ResultSet resultSet = statement.executeQuery();
@@ -89,28 +115,53 @@ public class MainFrame extends JFrame {
         danhSachNguyenVong.clear();
         model.setRowCount(0);
 
+        // Chuẩn bị câu lệnh UPDATE để cập nhật trạng thái
+        String updateQuery = """
+                UPDATE nguyen_vong
+                SET trang_thai = ?
+                WHERE id = ?;
+                """;
+        PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
+
         while (resultSet.next()) {
+            String id = resultSet.getString("id");
+            String soBaoDanh = resultSet.getString("so_bao_danh");
+            String maTruong = resultSet.getString("ma_truong");
+            String nganh = resultSet.getString("nganh");
+            String heDaoTao = resultSet.getString("he_dao_tao");
+            String chuongTrinhDaoTao = resultSet.getString("chuong_trinh_dao_tao");
+            double diemChuan = resultSet.getDouble("diem_chuan");
+            double diemThi = resultSet.getDouble("diem_thi");
+            String ghiChu = resultSet.getString("ghi_chu");
+
+            // So sánh điểm thi với điểm chuẩn
+            String trangThai = diemThi >= diemChuan ? "Đỗ" : "Trượt";
+
+            // Cập nhật trạng thái vào cơ sở dữ liệu
+            updateStatement.setString(1, trangThai);
+            updateStatement.setString(2, id);
+            updateStatement.executeUpdate();
+
+            // Tạo đối tượng NguyenVong và thêm vào danh sách
             NguyenVong nv = new NguyenVong(
-                    resultSet.getString("id"),
-                    resultSet.getString("so_bao_danh"),
-                    resultSet.getString("ma_truong"),
-                    resultSet.getString("nganh"),
-                    resultSet.getString("he_dao_tao"),
-                    resultSet.getString("chuong_trinh_dao_tao"),
-                    resultSet.getDouble("diem_chuan"),
-                    resultSet.getString("trang_thai"),
-                    resultSet.getString("ghi_chu")
+                    id, soBaoDanh, maTruong, nganh, heDaoTao, chuongTrinhDaoTao,
+                    diemChuan, trangThai, ghiChu
             );
             danhSachNguyenVong.add(nv);
+
+            // Thêm dữ liệu vào bảng hiển thị
             model.addRow(nv.toArray());
         }
 
+        // Cập nhật số thứ tự
         updateSTT();
+
+        // Đóng statement cập nhật
+        updateStatement.close();
     } catch (SQLException ex) {
-        JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + ex.getMessage());
+        JOptionPane.showMessageDialog(this, "Lỗi khi tải và cập nhật dữ liệu từ cơ sở dữ liệu: " + ex.getMessage());
     }
 }
-
 
     private void showAddEditDialog(NguyenVong nv) {
         JTextField so_bao_danhField = new JTextField(20);
@@ -132,6 +183,7 @@ public class MainFrame extends JFrame {
             trang_thaiField.setText(nv.trang_thai);
             ghi_chuField.setText(nv.ghi_chu);
             so_bao_danhField.setEditable(false);
+            trang_thaiField.setEditable(false);
         }
 
         JPanel panel = new JPanel(new GridLayout(10, 2));
@@ -234,7 +286,9 @@ public class MainFrame extends JFrame {
             String query;
             if (isNew) {query = "INSERT INTO nguyen_vong (id,so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?)";
             }else {
-                query = "UPDATE nguyen_vong SET ma_truong=?,nganh=?, he_dao_tao=?, chuong_trinh_dao_tao=?, diem_chuan=?, trang_thai=?, ghi_chu=? WHERE id = ? AND so_bao_danh=?";
+                query = "UPDATE nguyen_vong " +
+                    "SET ma_truong=?, nganh=?, he_dao_tao=?, chuong_trinh_dao_tao=?, diem_chuan=?, trang_thai = ?, ghi_chu=? " +
+                    "WHERE id=?";
             }
 
             PreparedStatement statement = connection.prepareStatement(query);
@@ -257,7 +311,6 @@ public class MainFrame extends JFrame {
             statement.setString(6, nv.trang_thai);
             statement.setString(7, nv.ghi_chu);
             statement.setString(8, nv.id);
-            statement.setString(9, nv.so_bao_danh);
         }
 
             statement.executeUpdate();
@@ -349,9 +402,88 @@ public class MainFrame extends JFrame {
             }
         }
     });
-    
-    
+    } 
+    private Admin getAdminInfo() {
+    Admin admin = null;
+    try (Connection connection = DatabaseConnection.getConnection()) {
+        String query = "SELECT username, email, password FROM admin WHERE username = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, currentUsername); // Sử dụng currentUsername
+        ResultSet resultSet = statement.executeQuery();
+
+        if (resultSet.next()) {
+            String username = resultSet.getString("username");
+            String email = resultSet.getString("email");
+            String password = resultSet.getString("password");
+            admin = new Admin(username, email, password);
+        }
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi lấy thông tin admin: " + ex.getMessage());
+    }
+    return admin;
 }
+
+    private void showAdminInfo() {
+    Admin admin = getAdminInfo();
+    if (admin != null) {
+        // Tạo một hộp thoại hiển thị thông tin admin
+        JPanel panel = new JPanel(new GridLayout(3, 2));
+        panel.add(new JLabel("Username:"));
+        panel.add(new JTextField(admin.getUsername()));
+        panel.add(new JLabel("Email:"));
+        panel.add(new JTextField(admin.getEmail()));
+        panel.add(new JLabel("Password:"));
+        panel.add(new JTextField(admin.getPassword())); // Mật khẩu không cần hiển thị
+
+        // Không cho phép chỉnh sửa mật khẩu
+        ((JTextField) panel.getComponent(5)).setEditable(false);
+
+        JOptionPane.showMessageDialog(this, panel, "Thông tin Admin", JOptionPane.INFORMATION_MESSAGE);
+    } else {
+        JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin admin.");
+    }
+}
+    private void showStatistics() {
+    // Tạo danh sách các thí sinh đã đỗ và trượt
+    DefaultListModel<String> passedModel = new DefaultListModel<>();
+    DefaultListModel<String> failedModel = new DefaultListModel<>();
+    
+    
+    // Phân loại thí sinh đã đỗ và trượt
+    for (NguyenVong nv : danhSachNguyenVong) {
+        if (nv.trang_thai.equals("Đỗ")) {
+            passedModel.addElement(nv.so_bao_danh);
+        } else {
+            failedModel.addElement(nv.so_bao_danh);
+        }
+    }
+
+    // Tạo các danh sách hiển thị cho thí sinh đỗ và trượt
+    JList<String> passedList = new JList<>(passedModel);
+    JList<String> failedList = new JList<>(failedModel);
+
+    // Tạo các hộp cuộn để chứa danh sách
+    JScrollPane passedScrollPane = new JScrollPane(passedList);
+    JScrollPane failedScrollPane = new JScrollPane(failedList);
+
+    // Tạo bảng chọn giữa "Thí sinh đỗ" và "Thí sinh trượt"
+    String[] options = {"Thí sinh đỗ", "Thí sinh trượt"};
+    JComboBox<String> selectionComboBox = new JComboBox<>(options);
+    selectionComboBox.addActionListener(e -> {
+        String selectedOption = (String) selectionComboBox.getSelectedItem();
+        if ("Thí sinh đỗ".equals(selectedOption)) {
+            JOptionPane.showMessageDialog(this, passedScrollPane, "Thí sinh đỗ", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, failedScrollPane, "Thí sinh trượt", JOptionPane.INFORMATION_MESSAGE);
+        }
+    });
+
+    // Hiển thị hộp thoại với lựa chọn
+    JPanel panel = new JPanel();
+    panel.add(selectionComboBox);
+    JOptionPane.showMessageDialog(this, panel, "Chọn danh sách thí sinh", JOptionPane.PLAIN_MESSAGE);
+}
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame();
