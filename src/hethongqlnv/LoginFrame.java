@@ -2,6 +2,10 @@ package hethongqlnv;
 
 import javax.swing.*;
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
     public LoginFrame() {
@@ -28,16 +32,31 @@ public class LoginFrame extends JFrame {
         add(panel);
 
         loginButton.addActionListener(e -> {
-            String username = userTextField.getText();
-            String password = new String(passwordField.getPassword());
+            String username = userTextField.getText().trim();
+            String password = new String(passwordField.getPassword()).trim();
 
-            if (username.equals("admin") && password.equals("12345")) {
+            if (authenticateAdmin(username, password)) {
                 JOptionPane.showMessageDialog(this, "Đăng nhập thành công!");
-                new MainFrame().setVisible(true);
+                new MainFrame(username).setVisible(true); // Chuyển username cho MainFrame
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu sai!");
             }
         });
+    }
+
+    private boolean authenticateAdmin(String username, String password) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            String query = "SELECT * FROM admin WHERE username = ? AND password = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            statement.setString(2, password);
+
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.next();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi kết nối cơ sở dữ liệu: " + ex.getMessage());
+            return false;
+        }
     }
 }
