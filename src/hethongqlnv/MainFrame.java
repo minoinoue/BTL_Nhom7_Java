@@ -45,7 +45,7 @@ public class MainFrame extends JFrame {
         JButton editButton = new JButton("Sửa nguyện vọng");
         JButton deleteButton = new JButton("Xóa nguyện vọng");
         JButton searchButton = new JButton("Tìm kiếm nguyện vọng");
-        JButton exportButton = new JButton("Xuất CSV");
+        JButton exportButton = new JButton("Xuất excel");
         JButton settingButton = new JButton("Setting");
         
         panel.add(addButton);
@@ -206,39 +206,43 @@ public class MainFrame extends JFrame {
         int option = JOptionPane.showConfirmDialog(this, panel, nv == null ? "Thêm Nguyện Vọng" : "Sửa Nguyện Vọng", JOptionPane.OK_CANCEL_OPTION);
 
         if (option == JOptionPane.OK_OPTION) {
-            String so_bao_danh = so_bao_danhField.getText().trim();
-            String ma_truong = ma_truongField.getText().trim();
-            String nganh = nganhField.getText().trim();
-            String he_dao_tao = he_dao_taoField.getText().trim();
-            String chuong_trinh_dao_tao = chuong_trinh_dao_taoField.getText().trim();
-            double diem_chuan = Double.parseDouble(diem_chuanField.getText().trim());
-            String trang_thai = trang_thaiField.getText().trim();
-            String ghi_chu = ghi_chuField.getText().trim();
+            try {
+                String so_bao_danh = so_bao_danhField.getText().trim();
+                String ma_truong = ma_truongField.getText().trim();
+                String nganh = nganhField.getText().trim();
+                String he_dao_tao = he_dao_taoField.getText().trim();
+                String chuong_trinh_dao_tao = chuong_trinh_dao_taoField.getText().trim();
+                double diem_chuan = Double.parseDouble(diem_chuanField.getText().trim());
+                String trang_thai = trang_thaiField.getText().trim();
+                String ghi_chu = ghi_chuField.getText().trim();
 
-            if (nv == null) {
-                String id;
-                Random random = new Random();
-                do {
-                    id = String.valueOf(random.nextInt(100));
-                } while (idDaTonTai(id));
+                if (nv == null) {
+                    String id;
+                    Random random = new Random();
+                    do {
+                        id = String.valueOf(random.nextInt(100));
+                    } while (idDaTonTai(id));
 
-                NguyenVong newNv = new NguyenVong(id, so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
-                danhSachNguyenVong.add(newNv);
-                model.addRow(newNv.toArray());
-                saveDataToDatabase(newNv, true);
-                JOptionPane.showMessageDialog(this, "Thêm nguyện vọng thành công!");
-            }else {
-                String id = idField.getText().trim();
-                NguyenVong newNv = new NguyenVong(id,so_bao_danh,ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
-                int row = table.getSelectedRow();
-                danhSachNguyenVong.set(row, newNv);
-                for (int i = 0; i < model.getColumnCount(); i++) {
-                    model.setValueAt(newNv.toArray()[i], row, i);
+                    NguyenVong newNv = new NguyenVong(id, so_bao_danh, ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
+                    danhSachNguyenVong.add(newNv);
+                    model.addRow(newNv.toArray());
+                    saveDataToDatabase(newNv, true);
+                    JOptionPane.showMessageDialog(this, "Thêm nguyện vọng thành công!");
+                }else {
+                    String id = idField.getText().trim();
+                    NguyenVong newNv = new NguyenVong(id,so_bao_danh,ma_truong, nganh, he_dao_tao, chuong_trinh_dao_tao, diem_chuan, trang_thai, ghi_chu);
+                    int row = table.getSelectedRow();
+                    danhSachNguyenVong.set(row, newNv);
+                    for (int i = 0; i < model.getColumnCount(); i++) {
+                        model.setValueAt(newNv.toArray()[i], row, i);
+                    }
+                    saveDataToDatabase(newNv, false);
+                    JOptionPane.showMessageDialog(this, "Sửa nguyện vọng thành công!"); 
                 }
-                saveDataToDatabase(newNv, false);
-                JOptionPane.showMessageDialog(this, "Sửa nguyện vọng thành công!"); 
-            }
             updateSTT();
+            } catch (NumberFormatException ex){
+                JOptionPane.showMessageDialog(null, "Điểm chuẩn phải là một số hợp lệ!");
+            } 
         }
     }
     private boolean idDaTonTai(String id) {
@@ -419,9 +423,9 @@ public class MainFrame extends JFrame {
                     writer.write("\n");
                 }
 
-                JOptionPane.showMessageDialog(this, "Xuất file CSV thành công!");
+                JOptionPane.showMessageDialog(this, "Xuất file excel thành công!");
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file CSV: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file excel: " + ex.getMessage());
             }
         }
     }
