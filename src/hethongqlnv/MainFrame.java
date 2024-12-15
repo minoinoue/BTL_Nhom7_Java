@@ -160,7 +160,21 @@ public class MainFrame extends JFrame {
         JOptionPane.showMessageDialog(this, "Lỗi khi tải và cập nhật dữ liệu từ cơ sở dữ liệu: " + ex.getMessage());
     }
 }
+    private boolean KiemTraSoBaoDanh(String soBaoDanh) {
+    try (Connection connection = DatabaseConnection.getConnection()) {
+        String query = "SELECT COUNT(*) FROM nguyen_vong WHERE so_bao_danh = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, soBaoDanh);
+        ResultSet resultSet = statement.executeQuery();
 
+        if (resultSet.next()) {
+            return resultSet.getInt(1) > 0; // Trả về true nếu số lượng bản ghi lớn hơn 0
+        }
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi kiểm tra số báo danh: " + ex.getMessage());
+    }
+    return false;
+}
     private void showAddEditDialog(NguyenVong nv) {
         JTextField idField = new JTextField(20);
         JTextField so_bao_danhField = new JTextField(20);
@@ -207,6 +221,7 @@ public class MainFrame extends JFrame {
 
         if (option == JOptionPane.OK_OPTION) {
             try {
+                boolean hasEmptyField = false;
                 String so_bao_danh = so_bao_danhField.getText().trim();
                 String ma_truong = ma_truongField.getText().trim();
                 String nganh = nganhField.getText().trim();
@@ -215,7 +230,17 @@ public class MainFrame extends JFrame {
                 double diem_chuan = Double.parseDouble(diem_chuanField.getText().trim());
                 String trang_thai = trang_thaiField.getText().trim();
                 String ghi_chu = ghi_chuField.getText().trim();
-
+                
+                if (so_bao_danh.isEmpty() || ma_truong.isEmpty() || nganh.isEmpty() || he_dao_tao.isEmpty() || chuong_trinh_dao_tao.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ các dữ liệu!");
+                    return;
+                }
+                
+                if (!KiemTraSoBaoDanh(so_bao_danh)) {
+                    JOptionPane.showMessageDialog(this, "Số báo danh không tồn tại!");
+                    return;
+                }
+                
                 if (nv == null) {
                     String id;
                     Random random = new Random();
@@ -227,6 +252,7 @@ public class MainFrame extends JFrame {
                     danhSachNguyenVong.add(newNv);
                     model.addRow(newNv.toArray());
                     saveDataToDatabase(newNv, true);
+                    
                     JOptionPane.showMessageDialog(this, "Thêm nguyện vọng thành công!");
                 }else {
                     String id = idField.getText().trim();
@@ -489,14 +515,11 @@ public class MainFrame extends JFrame {
         // Tạo một hộp thoại hiển thị thông tin admin
         JPanel panel = new JPanel(new GridLayout(3, 2));
         panel.add(new JLabel("Username:"));
-        panel.add(new JTextField(admin.getUsername()));
+        panel.add(new JTextField(admin.getUsername()){{ setEditable(false); }});
         panel.add(new JLabel("Email:"));
-        panel.add(new JTextField(admin.getEmail()));
+        panel.add(new JTextField(admin.getEmail()){{ setEditable(false); }});
         panel.add(new JLabel("Password:"));
-        panel.add(new JTextField(admin.getPassword())); // Mật khẩu không cần hiển thị
-
-        // Không cho phép chỉnh sửa mật khẩu
-        ((JTextField) panel.getComponent(5)).setEditable(false);
+        panel.add(new JTextField(admin.getPassword()){{ setEditable(false); }});
 
         JOptionPane.showMessageDialog(this, panel, "Thông tin Admin", JOptionPane.INFORMATION_MESSAGE);
     } else {
